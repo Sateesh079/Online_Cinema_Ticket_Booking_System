@@ -1,607 +1,385 @@
 package com.movie.controller;
 
-
-
-
-import java.util.List;
-
-import java.util.Random;
-
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.stereotype.Controller;
-
-import org.springframework.ui.Model;
-
-import org.springframework.web.bind.annotation.GetMapping;
-
-import org.springframework.web.bind.annotation.ModelAttribute;
-
-import org.springframework.web.bind.annotation.PathVariable;
-
-import org.springframework.web.bind.annotation.PostMapping;
-
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RequestParam;
-
-import org.springframework.web.servlet.ModelAndView;
-
-
-
 import com.movie.bean.Admin;
-
 import com.movie.bean.BookingTable;
-
 import com.movie.bean.CustomerDetails;
-
 import com.movie.bean.LoginCredentials;
-
 import com.movie.bean.MovieList;
-
 import com.movie.repository.AdminRepository;
-
 import com.movie.repository.BookingTableRepo;
-
 import com.movie.repository.CustomerDetailsRepository;
-
 import com.movie.repository.LoginCredentialsRepository;
-
 import com.movie.service.MovieService;
-
 import com.movie.service.TheatreService;
-
-
-
 import jakarta.servlet.http.HttpSession;
-
-
+import java.util.List;
+import java.util.Random;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 
 public class MainController {
-
-
-
  @Autowired
 
  CustomerDetailsRepository custRepo;
-
-
 
  @Autowired
 
  LoginCredentialsRepository logRepo;
 
-
-
  @Autowired
 
  MovieService moviSer;
-
-
 
  @Autowired
 
  TheatreService theaterServ;
 
-
-
  @Autowired
 
  BookingTableRepo bookRepo;
-
-
 
  public String user;
 
  public String adminn;
 
-
-
-	
-
  @Autowired
 
  AdminRepository adRep;
 
-
-
- // String id;
-
-
-
  @GetMapping("/")
 
  public String index() {
-
-
-
- return "Home";
-
+  return "Home";
  }
-
-
 
  @GetMapping("/home")
 
  public String indexHome(Model m) {
+  m.addAttribute("msg", "Invalid UserName");
 
- m.addAttribute("msg", "Invalid UserName or Password");
-
-
-
- return "Home";
-
+  return "Home";
  }
-
-
 
  @GetMapping("/loginPage")
 
  public String showLoginForm() {
-
- return "/";
-
+  return "/";
  }
-
-
 
  @PostMapping("/loginPage")
 
- public String submitLoginForm(@RequestParam String userID, @RequestParam String password, HttpSession session,
+ public String submitLoginForm(@RequestParam String userID,
+                               @RequestParam String password, HttpSession session,
 
-  Model m) {
+                               Model m) {
+  LoginCredentials log = logRepo.findByUserID(userID);
 
- LoginCredentials log = logRepo.findByUserID(userID);
+  Admin ad = adRep.findByUsername(userID);
 
- Admin ad=adRep.findByUsername(userID);
+  m.addAttribute("msg", "Invalid UserName or Passwordd");
 
-  
-
-  
-
- m.addAttribute("msg", "Invalid UserName or Password");
-
-
-
- if (log == null && ad==null ) {
-
-  
-
-  return "redirect:/home";
-
- }else if(log==null) {
-
-  
-
-  if (!ad.getUsername().equals(userID) || !ad.getAdminPass().equals(password)) {
-
-   
-
+  if (log == null && ad == null) {
    return "redirect:/home";
 
-  } if (ad.getUsername().equals(userID) && ad.getAdminPass().equals(password)) {
+  } else if (log == null) {
+   if (!ad.getUsername().equals(userID)
+           || !ad.getAdminPass().equals(password)) {
+    return "redirect:/home";
+   }
+   if (ad.getUsername().equals(userID)
+           && ad.getAdminPass().equals(password)) {
+    adminn = userID;
 
-   adminn=userID;
+    session.setAttribute("admin", adminn);
 
-   session.setAttribute("admin", adminn);
+    return "redirect:/TheatreTable/List";
+   }
 
-   return "redirect:/TheatreTable/List";
-
-  }
-
-   
-
- }else if(ad==null&&!log.getPassword().equals(password)) {
-
+  } else if (ad == null && !log.getPassword().equals(password)) {
    return "redirect:/home";
 
-   
+  } else {
+   user = userID;
 
-  }else
-
-  {user = userID;
-
-  session.setAttribute("userID",userID);
-
-
+   session.setAttribute("userID", userID);
 
    return "redirect:/movies";
-
   }
 
- return "redirect:/home";
-
+  return "redirect:/home";
  }
-
-  
-
-  
-
-	
-
-	
-
-
-
-
 
  @GetMapping("/updatePass")
 
  public String update(HttpSession session) {
+  //	System.out.println(session.getAttribute("userID"));
 
- //	System.out.println(session.getAttribute("userID"));
+  // String useri = (String) session.getAttribute("userID");
 
- // String useri = (String) session.getAttribute("userID");
+  // LoginCredentials log = logRepo.findByUserID(useri);
 
-// LoginCredentials log = logRepo.findByUserID(useri);
+  // log.setPassword(pass);
 
-// log.setPassword(pass);
+  // logRepo.save(log);
 
-// logRepo.save(log);
-
-  if(session.getAttribute("userID")==null) {
-
-  return "redirect:/";
-
+  if (session.getAttribute("userID") == null) {
+   return "redirect:/";
   }
 
- return "updatePass";
-
+  return "updatePass";
  }
-
-	
 
  @PostMapping("/updatePass")
 
- public String Updatedpass(@RequestParam String pass ,Model m,HttpSession session) {
-
+ public String Updatedpass(
+         @RequestParam String pass, Model m, HttpSession session) {
   String useri = (String) session.getAttribute("userID");
 
+  LoginCredentials log = logRepo.findByUserID(useri);
 
+  log.setPassword(pass);
 
- LoginCredentials log = logRepo.findByUserID(useri);
+  logRepo.save(log);
 
- log.setPassword(pass);
+  m.addAttribute("msg", "Updated Password Successfully");
 
- logRepo.save(log);
-
- m.addAttribute("msg", "Updated Password Successfully");
-
- return "updatePass";
-
+  return "updatePass";
  }
-
-
 
  @GetMapping("/register")
 
  public String register(Model m) {
+  m.addAttribute("customer", new CustomerDetails());
 
- m.addAttribute("customer", new CustomerDetails());
+  m.addAttribute("lg", new LoginCredentials());
 
- m.addAttribute("lg", new LoginCredentials());
-
-
-
- return "register";
-
+  return "register";
  }
 
+ //	@ModelAttribute("lg")
 
+ //	public LoginCredentials id(@PathVariable int logid) {
 
-//	@ModelAttribute("lg")
+ // LoginCredentials ll=new LoginCredentials();
 
-//	public LoginCredentials id(@PathVariable int logid) {
+ // ll.getId();
 
-// LoginCredentials ll=new LoginCredentials();
-
-// ll.getId();
-
-// return ll;
+ // return ll;
 
  // }
 
  @RequestMapping("/loginInsert")
 
- public ModelAndView loginInsert(@ModelAttribute("customer") CustomerDetails customer,
+ public ModelAndView loginInsert(
+         @ModelAttribute("customer") CustomerDetails customer,
 
-  @ModelAttribute("lg") LoginCredentials lg, @RequestParam String password) {
+         @ModelAttribute("lg") LoginCredentials lg,
+         @RequestParam String password) {
+  ModelAndView mv = new ModelAndView();
 
- ModelAndView mv = new ModelAndView();
+  custRepo.save(customer);
 
- custRepo.save(customer);
+  System.out.println("gvgjhg");
 
- System.out.println("gvgjhg");
+  Random random = new Random();
 
+  int randomnum = random.nextInt(9000) + 1000;
 
+  String name = customer.getName();
 
- Random random = new Random();
+  String custIdString = name.substring(0, 2).toUpperCase() + randomnum;
 
- int randomnum = random.nextInt(9000) + 1000;
+  String pass = password;
 
+  lg.setCustomerID(custIdString);
 
+  lg.setPassword(pass);
 
- String name = customer.getName();
+  lg.setCustomer(customer);
 
- String custIdString = name.substring(0, 2).toUpperCase() + randomnum;
+  logRepo.save(lg);
 
- String pass = password;
+  // id=lg.getCustomerID();
 
- lg.setCustomerID(custIdString);
+  // mv.setViewName("loginDetails");
 
- lg.setPassword(pass);
+  String s = lg.getCustomerID();
 
- lg.setCustomer(customer);
+  String ss = lg.getPassword();
 
+  mv.addObject("cust", s);
 
+  mv.addObject("pass", ss);
 
- logRepo.save(lg);
+  // mv.setViewName("userLoginDetails");
 
- // id=lg.getCustomerID();
+  System.out.println(lg.getId());
 
- // mv.setViewName("loginDetails");
+  // return "redirect:userLoginDetails";
 
- String s = lg.getCustomerID();
+  mv.setViewName("userLoginDetails");
 
- String ss = lg.getPassword();
-
- mv.addObject("cust", s);
-
- mv.addObject("pass", ss);
-
- // mv.setViewName("userLoginDetails");
-
-
-
- System.out.println(lg.getId());
-
- // return "redirect:userLoginDetails";
-
- mv.setViewName("userLoginDetails");
-
- return mv;
-
+  return mv;
  }
-
-
 
  @GetMapping("/userLoginDetails")
 
  public String loginDetails() {
-
-  
-
-
-
- return "userLoginDetails";// logRepo.findById(id).toString();
-
+  return "userLoginDetails"; // logRepo.findById(id).toString();
  }
-
-
 
  @GetMapping("/movies")
 
- public String listMovies(Model model,HttpSession session) {
+ public String listMovies(Model model, HttpSession session) {
+  // if(user==null||session.getAttribute("userID")==null) {
 
-  
+  // return "redirect:/";
 
-  
+  // }
 
-// if(user==null||session.getAttribute("userID")==null) {
+  // List<MovieList> movie=movieService.listMovies();
 
-// return "redirect:/";
+  model.addAttribute("movies", moviSer.listMovies());
 
-// }
-
- // List<MovieList> movie=movieService.listMovies();
-
- model.addAttribute("movies", moviSer.listMovies());
-
- return "movies";
-
-
-
+  return "movies";
  }
-
-
 
  @GetMapping("/movies/{id}")
 
- public String booktMovie(@PathVariable("id") Integer id,HttpSession session, Model model, BookingTable book) {
+ public String booktMovie(@PathVariable("id") Integer id, HttpSession session,
+                          Model model, BookingTable book) {
+  if (user == null || session.getAttribute("userID") == null) {
+   return "redirect:/";
+  }
 
-  
+  model.addAttribute("movie", moviSer.findByMovieId(id));
 
- if(user==null||session.getAttribute("userID")==null) {
+  model.addAttribute("bookingId", book);
 
-  return "redirect:/";
+  // List<MovieList> movie=movieService.listMovies();
 
+  /// model.addAttribute("theaters", theaterServ.allTheater());
+
+  return "booking";
  }
-
-
-
- model.addAttribute("movie", moviSer.findByMovieId(id));
-
- model.addAttribute("bookingId", book);
-
- // List<MovieList> movie=movieService.listMovies();
-
- /// model.addAttribute("theaters", theaterServ.allTheater());
-
- return "booking";
-
-
-
- }
-
-
 
  @PostMapping("/movies/{id}")
 
- public String bookedMovie(@ModelAttribute("bookingId") BookingTable book, HttpSession session,Model model, MovieList movie) {
+ public String bookedMovie(@ModelAttribute("bookingId") BookingTable book,
+                           HttpSession session, Model model, MovieList movie) {
+  if (user == null || session.getAttribute("userID") == null) {
+   return "redirect:/";
+  }
 
-	
+  // model.addAttribute("movie", moviSer.findByMovieId(id));
 
+  // List<MovieList> movie=movieService.listMovies();
 
+  /// model.addAttribute("theaters", theaterServ.allTheater());
 
- if(user==null||session.getAttribute("userID")==null) {
+  // movie=moviSer.findByMovieId(id);
 
-  return "redirect:/";
+  // System.out.println(movie.getMovieName());
 
+  bookRepo.save(book);
+
+  book.setMovieName(book.getMovieName());
+
+  book.setTheaterName(book.getTheaterName());
+
+  book.setPrice(book.getPrice() * book.getNumOfSeats());
+
+  book.setUserID(user);
+
+  bookRepo.save(book);
+
+  // List<BookingTable> booki = bookRepo.findAllByUserID(user);
+
+  model.addAttribute("book", "Booked successfully");
+
+  model.addAttribute("booking", book);
+
+  return "creditcard";
  }
-
- // model.addAttribute("movie", moviSer.findByMovieId(id));
-
-
-
- // List<MovieList> movie=movieService.listMovies();
-
- /// model.addAttribute("theaters", theaterServ.allTheater());
-
- // movie=moviSer.findByMovieId(id);
-
- // System.out.println(movie.getMovieName());
-
- bookRepo.save(book);
-
- book.setMovieName(book.getMovieName());
-
- book.setTheaterName(book.getTheaterName());
-
- book.setPrice(book.getPrice() * book.getNumOfSeats());
-
- book.setUserID(user);
-
- bookRepo.save(book);
-
-
-
- //List<BookingTable> booki = bookRepo.findAllByUserID(user);
-
- model.addAttribute("book", "Booked successfully");
-
- model.addAttribute("booking", book);
-
-
-
- return "creditcard";
-
-
-
- }
-
-
 
  @PostMapping("/myBookings")
 
- public String myBookings(Model m, BookingTable book,HttpSession session) {
+ public String myBookings(Model m, BookingTable book, HttpSession session) {
+  // if(user==null) {
 
-// if(user==null) {
+  // return "redirect:/";
 
-// return "redirect:/";
+  // }
 
-// }
+  if (user == null || session.getAttribute("userID") == null) {
+   return "redirect:/";
+  }
 
- if(user==null||session.getAttribute("userID")==null) {
+  List<BookingTable> booki = bookRepo.findAllByUserID(user);
 
-  return "redirect:/";
+  m.addAttribute("book", "Booked successfully!!!");
 
+  m.addAttribute("bookings", booki);
+
+  return "myBookings";
  }
-
-  
-
- List<BookingTable> booki = bookRepo.findAllByUserID(user);
-
- m.addAttribute("book", "Booked successfully!!!");
-
- m.addAttribute("bookings", booki);
-
- return "myBookings";
-
- }
-
-	
 
  @GetMapping("/myBookings")
 
- public String myiBookings(Model m, BookingTable book,HttpSession session) {
+ public String myiBookings(Model m, BookingTable book, HttpSession session) {
+  if (user == null || session.getAttribute("userID") == null) {
+   return "redirect:/";
+  }
 
- if(user==null||session.getAttribute("userID")==null) {
+  List<BookingTable> booki = bookRepo.findAllByUserID(user);
 
-  return "redirect:/";
+  // m.addAttribute("book", "Booked successfully");
 
- }
+  m.addAttribute("bookings", booki);
 
-
-
-  
-
- List<BookingTable> booki = bookRepo.findAllByUserID(user);
-
- //m.addAttribute("book", "Booked successfully");
-
- m.addAttribute("bookings", booki);
-
- return "myBookings";
-
+  return "myBookings";
  }
 
  @GetMapping("/logout")
 
  public String logout(HttpSession session) {
+  session.invalidate();
 
- session.invalidate();
+  // user=null;
 
-// user=null;
+  // if(session.getAttribute("userID")==null) {
 
-// if(session.getAttribute("userID")==null) {
+  // return "/";
 
-// return "/";
+  // }
 
-// }
-
- return "Home";
-
+  return "Home";
  }
-
-	
-
-
-
-
-
-	
-
-
 
  @GetMapping("/allBookings")
 
- public String allUserBookings(Model m, BookingTable book,HttpSession session) {
+ public String allUserBookings(
+         Model m, BookingTable book, HttpSession session) {
+  if (session.getAttribute("admin") == null) {
+   return "redirect:/";
+  }
 
- if(session.getAttribute("admin")==null) {
+  List<BookingTable> booki = bookRepo.findAll();
 
-  return "redirect:/";
+  // m.addAttribute("book", "Booked successfully");
 
+  m.addAttribute("bookings", booki);
+
+  return "allBookings";
  }
-
-
-
-  
-
- List<BookingTable> booki = bookRepo.findAll();
-
- //m.addAttribute("book", "Booked successfully");
-
- m.addAttribute("bookings", booki);
-
- return "allBookings";
-
- }
-
-
-
 }
-
