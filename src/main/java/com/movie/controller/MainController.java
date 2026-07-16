@@ -65,7 +65,7 @@ public class MainController {
  @GetMapping("/home")
 
  public String indexHome(Model m) {
-  m.addAttribute("msg", "Invalid UserName or Password");
+  m.addAttribute("msg", "Invalid Password");
 
   return "Home";
  }
