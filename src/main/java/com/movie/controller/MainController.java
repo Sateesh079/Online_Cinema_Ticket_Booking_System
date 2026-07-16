@@ -86,7 +86,7 @@ public class MainController {
 
   Admin ad = adRep.findByUsername(userID);
 
-  m.addAttribute("msg", "Invalid UserName or Password");
+  m.addAttribute("msg", "Invalid UserName or Passwordd");
 
   if (log == null && ad == null) {
    return "redirect:/home";
